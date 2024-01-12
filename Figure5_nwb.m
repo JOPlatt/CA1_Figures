@@ -46,17 +46,19 @@ ROI_names = [ ...
     "ROInum_15", ...
     "ROInum_2000"];
 totalSets = 70;
+
 %{
 creating process module for time_span
 %}
-tempData_time = [];
-tempData_AccPerRoi = [];
-tempData_AccPerRoiSh = [];
-tempData_AccPerRoiPre = [];
-tempData_AccPerRoiShPre = [];
-tempData_LatencyPerRoi = [];
-tempData_MeanAccuracy = [];
+
 for rn = 1:size(ROI_names,2)
+    tempData_time = [];
+    tempData_AccPerRoi = [];
+    tempData_AccPerRoiSh = [];
+    tempData_AccPerRoiPre = [];
+    tempData_AccPerRoiShPre = [];
+    tempData_LatencyPerRoi = [];
+    tempData_MeanAccuracy = [];
     index_ticker01 = 0; %time
     index_ticker02 = 0; %per ROI
     index_ticker03 = 0; %per ROI sh
@@ -244,7 +246,8 @@ end
 
 nwbExport(nwb_data,"Figure5_ProcessedData.nwb")
 %% pulling the data back out
-
+Figure5_data = nwbRead("Figure5_ProcessedData.nwb",'ignorecache');
+%%
 name_data = [ ...
     "time_span", ...
     "accuracy_per_ROI", ...
@@ -262,10 +265,17 @@ name_ROI = [ ...
     "ROI_15", ...
     "ROI_2000", ...
     ];
-
+FigureEight = struct;
 pastend = zeros([70,5]);
-for ct = 1:70 %for all the sessions
-    for rnum = 1:size(name_ROI,2) %for all the ROIs
+%first pull out all the values in there sturcutres. for the last place into
+%a group of cells. This will be followed by dividing up into 70 row chuncks
+
+
+
+
+
+for rnum = 1:size(name_ROI,2) %for all the ROIs
+    for ct = 1:70 %for all the sessions
         for pik = 1:size(name_data,2)-1 %for all the datasets within
             %assigning dynamic names
             if ct < 10
@@ -275,22 +285,22 @@ for ct = 1:70 %for all the sessions
             end
             name_process = append(name_ROI(rnum),'_',name_data(pik));
             %pulling data from NWB file
-            temp_table = nwb_data.processing.get(char(name_process)).dynamictable.get(char(name_data(pik))).getRow(ct);
+            temp_table = Figure5_data.processing.get(char(name_process)).dynamictable.get(char(name_data(pik))).getRow(ct);
             %running throuhg a condition that if dataset = 7 the
             %processing is different
             if pik == size(name_data,2)-1
                 %name of dataset wihtin the NWB file
                 name_index = append(name_ROI(rnum),'_',name_data(pik+1));
                 %pulling index points for a single session using NWB files
-                temp_indexpoints = nwb_data.processing.get(char(name_index)).dynamictable.get(char(name_data(pik+1))).getRow(ct);
+                temp_indexpoints = Figure5_data.processing.get(char(name_index)).dynamictable.get(char(name_data(pik+1))).getRow(ct);
                 tamp_indexpoints = temp_indexpoints{:,:}{1,1};
                 %accounting for the index offset after first session
                 %pulling offset value
-                time_index = nwb_data.processing.get(char(name_process)).dynamictable.get(char(name_data(pik))).vectordata.get('col1_index').data(:);
+                time_index = Figure5_data.processing.get(char(name_process)).dynamictable.get(char(name_data(pik))).vectordata.get('col1_index').data(:);
                 %putting data in correct format
                 temp_table = temp_table{1,1}{:,:};
                 %pulling the session ROI ending index values
-                table_index = nwb_data.processing.get(char(name_index)).dynamictable.get(char(name_data(pik+1))).getRow(ct); %ending index points for each sessions mean averages
+                table_index = Figure5_data.processing.get(char(name_index)).dynamictable.get(char(name_data(pik+1))).getRow(ct); %ending index points for each sessions mean averages
                 indexPoints = table_index{1,1}{:,:};
                 %creating cell array for data
                 average_cell = cell([size(indexPoints,1),1]);
@@ -300,10 +310,10 @@ for ct = 1:70 %for all the sessions
                     average_cell{ti,1} = temp_table(Round:RoundEnd);
                     Round = RoundEnd + 1;
                 end
-                NWBdata.(name_session).(name_ROI(rnum)).(name_data(pik)) = cell2table(average_cell);
-                NWBdata.(name_session).(name_ROI(rnum)).(name_data(pik)).Properties.VariableNames(1) = "mean_average";
+                FigureFive.(name_session).(name_ROI(rnum)).(name_data(pik)) = cell2table(average_cell);
+                FigureFive.(name_session).(name_ROI(rnum)).(name_data(pik)).Properties.VariableNames(1) = "mean_average";
             else
-                NWBdata.(name_session).(name_ROI(rnum)).(name_data(pik)) = temp_table{:,:}{1,1}';
+                FigureFive.(name_session).(name_ROI(rnum)).(name_data(pik)) = temp_table{:,:}{1,1}';
             end
             
         end
